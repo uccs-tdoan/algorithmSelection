@@ -1,0 +1,23 @@
+Dataset,Type,Stacking,"Stacking (j4.8,NB)
+","Stacking
+(j4.8;ZeroR,NB)"
+abalone,Obsersed,0.495,0.515566667,0.519966667
+abalone,Predicted,0.41,0.43,0.43
+waveform,Obsersed,0.456133333,0.844066667,0.843666667
+waveform,Predicted,0.39,0.79,0.79
+shuttle,Obsersed,0.685333333,0.976733333,0.968933333
+shuttle,Predicted,0.6,0.91,0.91
+g-credit,Obsersed,0.58,0.612766667,0.612766667
+g-credit,Predicted,0.46,0.53,0.53
+KRvsKP,Obsersed,0.5074,0.5868,0.590233333
+KRvsKP,Predicted,0.45,0.47,0.47
+art-02,Obsersed,0.433466667,0.591933333,0.568266667
+art-02,Predicted,0.36,0.47,0.5
+art-07,Obsersed,0.454633333,0.728633333,0.729966667
+art-07,Predicted,0.35,0.61,0.61
+art-12,Obsersed,0.432933333,0.536166667,0.534666667
+art-12,Predicted,0.34,0.42,0.42
+art-17,Obsersed,0.5,0.61,0.6
+art-17,Predicted,0.41,0.47,0.47
+art-24,Obsersed,0.5002,0.7983,0.798133333
+art-24,Predicted,0.43,0.61,0.61

@@ -23,28 +23,34 @@ synthetic$selection <- ifelse(synthetic$value > 0.6,'YES','NO')
    # labs(x = "") + scale_y_continuous(breaks=c(0.25, 0.5, 0.75,1)) +
    # geom_hline(aes(yintercept=0.6), colour="#990000", linetype="dashed")
 
-p1 <- ggplot(realworld,aes(x=variable,y= value,fill=selection)) +geom_bar(stat='identity') +
-    ylab("Performance with SAR metric") + theme(axis.title.y=element_text(face='bold'))+
-	ggtitle("Algorithms' performance on UCI datasets") +
+p1 <- ggplot(realworld,aes(x=variable,y= value,fill=selection)) +
+  geom_bar(stat='identity') + ylab("Performance with SAR metric") + 
+  theme(axis.title.y=element_text(face='bold'))+
+	ggtitle("Learners' performance on UCI datasets") + theme(legend.position="bottom")+
 	facet_grid(Dataset~.) + scale_fill_grey(start = 0, end = .6)+
 	theme(axis.text.x=element_text(angle=90, size=12,face="bold", vjust=0.5)) + 
-    theme(plot.title = element_text(size=20, face="bold", vjust=2)) +
-    labs(x = "") + scale_y_continuous(breaks=c(0.25, 0.5, 0.75,1)) +
-	geom_hline(aes(yintercept=0.6), colour="black", linetype="dashed")
+  theme(plot.title = element_text(size=20, face="bold", vjust=2)) +
+  labs(x = "") + scale_y_continuous(breaks=c(0.25, 0.5, 0.75,1)) +
+	geom_hline(aes(yintercept=0.6), colour="black", linetype="dashed") +
+  theme(strip.text = element_text(size=8)) 
+    
   
-p2 <- ggplot(synthetic,aes(x=variable,y= value,fill=selection)) +geom_bar(stat='identity') +
- ylab("Performance with SAR metric") + theme(axis.title.y=element_text(face='bold'))+
- ggtitle("Algorithms' performance on synthetic datasets") +  facet_grid(Dataset~.) + scale_fill_grey(start = 0, end = .6)+
- theme(axis.text.x=element_text(angle=90, size=12,face="bold", vjust=0.5)) +
- theme(plot.title = element_text(size=20, face="bold", vjust=2)) +
- labs(x = "") + scale_y_continuous(breaks=c(0.25, 0.5, 0.75,1)) +
- geom_hline(aes(yintercept=0.6), colour="black", linetype="dashed")
+p2 <- ggplot(synthetic,aes(x=variable,y= value,fill=selection)) + 
+  geom_bar(stat='identity') + ylab("Performance with SAR metric") +
+  theme(axis.title.y=element_text(face='bold')) + theme(legend.position="bottom")+
+  ggtitle("Learners' performance on synthetic datasets") +  facet_grid(Dataset~.) + 
+  scale_fill_grey(start = 0, end = .6)+
+  theme(axis.text.x=element_text(angle=90, size=12,face="bold", vjust=0.5)) +
+  theme(plot.title = element_text(size=20, face="bold", vjust=2)) +
+  labs(x = "") + scale_y_continuous(breaks=c(0.25, 0.5, 0.75,1)) +
+  geom_hline(aes(yintercept=0.6), colour="black", linetype="dashed") +
+  theme(strip.text = element_text(size=8))   
 
-pdf("graphReal.pdf", width=6, height=4)
+pdf("graphReal.pdf", width=6, height=5)
 print(p1)
 dev.off()
 
-pdf("graphSynthetic.pdf", width=6, height=4)
+pdf("graphSynthetic.pdf", width=6, height=5)
 print(p1)
 dev.off()
  

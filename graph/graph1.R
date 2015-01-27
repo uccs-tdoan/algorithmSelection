@@ -11,8 +11,8 @@ synthetic <- df[6:10,]
 realworld <- melt(realworld, id='Dataset',variable_name='selection')
 synthetic <- melt(synthetic, id='Dataset',variable_name='selection')
  
-realworld$selection <- ifelse(realworld$value > 0.6,'YES','NO')
-synthetic$selection <- ifelse(synthetic$value > 0.6,'YES','NO')
+realworld$selection <- ifelse(realworld$value > 0.6,'applicable','non-applicable')
+synthetic$selection <- ifelse(synthetic$value > 0.6,'applicable','non-applicable')
 
 # Display value on top of bars
 #p1 <- ggplot(realworld,aes(x=variable,y= value,fill=selection)) +geom_bar(stat='identity') +

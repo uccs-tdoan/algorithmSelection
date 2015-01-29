@@ -1,8 +1,9 @@
-/* ClassifiersCost.java is in companion with algorithm.java (without Misclassifier Cost)  
+/* ClassifiersCost.java is in companion with performance.java (without Misclassifier Cost)  
  * 
  * Tri Doan
  * Implement different classifiers in order to get statistical summaries   
- * Date: Sept 25
+ * Date: 2014 Sept 25
+ * Last update 2015, Jan 28
  * */
 import java.io.BufferedReader;
 import java.io.File;
@@ -116,7 +117,7 @@ public class ClassifiersCost {
    }
 	
 	public static void main(String[] args) throws Exception {
-		String outFile = "ClassifierCostSynthetic.csv";
+		String outFile = "ClassifierCostActual.csv";
 		String outPath = "c:\\AlgoSelecMeta";
 		
 		
@@ -124,7 +125,7 @@ public class ClassifiersCost {
 		
 		//List<String> results = new ArrayList<String>() ;
 		//List<String> results = Arrays.asList("zoo.arff","vehicle.arff"); //4.2 no
-		String inPath  = "c:\\data\\tmp";
+		String inPath  = "C:\\data\\PCA\\tmp";
 		List<String> results = getList(inPath);
 		//String inFile  = "zoo.arff";
 		String inFile;
@@ -139,7 +140,7 @@ public class ClassifiersCost {
         
 		// Use a set of classifiers
 				Classifier[] models = { 
-				        new J48(), // a decision trees
+				  new J48(), // a decision trees
 						new DecisionStump(), //one-level decision tree
 						new RandomForest(),
 						new PART(), 
@@ -152,8 +153,8 @@ public class ClassifiersCost {
 						new KStar(),  // instance based classifier using entropy based distance 
 						new LWL(), // Locally weighted learning used KNN
 						
-						new NaiveBayes(), 
-					    //(Classifier) new svm(),	
+						new NaiveBayes(),
+					   // (Classifier) new svm(),	
 						new AdaBoostM1(), 
 						new Bagging(), 
 						new Stacking(), 
@@ -161,11 +162,12 @@ public class ClassifiersCost {
 						new RandomCommittee(),   
 				
 						new Vote(),  
-						
+						new LibSVM(),
 						new Logistic() , 
 						new MultilayerPerceptron(), 
 						new SimpleLogistic(),  // linear logistic regression models. 
-				    	new SMOreg(), //SMOreg implements the support vector machine for regression.				
+					new SMO()   
+				//	new SMOreg(), //SMOreg implements the support vector machine for regression.				
 				
 				};
 		 

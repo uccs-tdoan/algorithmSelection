@@ -11,8 +11,7 @@ Remaining is codes in java for obtaining performance, compress data;
  All intermediate files are in csv format
  The following sofwares are used 
  R version 3.1.2 
- Python 2.7 (other option use Anaconda or Canpony that includes python, pandas)
- Pandas
+ skcikit-learn, Pandas, Python 2.7 (other option use Anaconda or Canpony that includes python, pandas)
  
  Pls modify the path accordingly 
   

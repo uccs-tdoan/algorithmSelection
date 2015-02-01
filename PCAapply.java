@@ -91,26 +91,6 @@ public class PCAapply {
          System.out.print(data.attribute(j).name()+" ");
     
       
-      //timer.StopTimer("loading_data");
-
-        
-      //Find out what dimension we want.
-     
-    /*  String dimension = Utils.getOption('d', args);
-     if (dimension.length() == 0) {
-        k = data.numAttributes();
-      } else {
-        k = Integer.parseInt(dimension);
-        // Validate the parameter.
-        if (k > data.numAttributes()) {
-          System.out.printf("[Fatal] New dimensionality (%d) cannot be greater"
-              + "than existing dimensionality (%d)!'\n", k, data.numAttributes());
-          
-         System.exit(-1); 
-        } 
-      } */
-      
-      
       if (dimension > data.numAttributes()) {
     	  dimension = data.numAttributes()-1;
     	  outPath =  "c:\\data\\PCA_less\\pca_"+dataset;
@@ -163,11 +143,6 @@ public class PCAapply {
 	  //System.out.print(transformedData.classAttribute());
 	  writer.flush();
 	  writer.close();      
-      
-     // timer.StopTimer("total_time");
-
-      //timer.PrintTimer("loading_data");
-     // timer.PrintTimer("total_time");
         }
     } catch (IllegalArgumentException e) {
       System.err.println(USAGE);

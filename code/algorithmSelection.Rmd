@@ -1,0 +1,397 @@
+---
+title: "Regression Models"
+output: pdf_document
+author: Tri Doan
+---
+
+The following codes demonstrate algorithm selection  project.
+
+```{r,echo=FALSE}
+library(caret)
+library(e1071)
+library(ggplot2)
+library(MASS)
+
+setwd("C:/algoSelecMeta/finalData")
+
+```
+
+Since dataset contains all features that might be not all useful. We eliminate first 6 attributes as well as 25th feature (Dataset feature).
+
+
+
+```{r, echo=FALSE}
+df <- read.csv("AlgoData.csv")
+
+df <- df[-c(1:6,25)]
+```
+Next, we convert category feature (algorithm attribute) into binary feature.
+```{r}
+simpleMod <- dummyVars(~., data=df,levelsOnly= TRUE)
+df <- predict(simpleMod, df)
+df <- as.data.frame(df)
+
+write.table(df,file="Train.csv",sep=",",row.names=FALSE,col.names=TRUE)    
+```
+ In this code section, we plot density by algorithm of TrainPCAplot.csv which
+indicates skewly data for most attributes
+```{r, echo=FALSE}
+ set.seed(215)
+ TrainRow <- createDataPartition(df[, ncol(df)], p = 0.7, list= FALSE)
+
+ trainData <- df[TrainRow,]
+ ctrl <- trainControl(method = "repeatedcv", repeats = 5,number=10)
+
+ trainX <- df[TrainRow,1:ncol(df)-1]
+ trainY<-df[TrainRow,ncol(df)]
+ testX <- df[-TrainRow, 1:ncol(df)-1]
+ observed <- df[-TrainRow,ncol(df)]
+```
+Model Tree (M5P in weka)
+
+We tune M5P
+```{r}
+ m5Tune <- train(trainX, trainY, 
+                 method = "M5", 
+                 trControl = trainControl(method = "cv"), 
+                 control = Weka_control(M = 10))
+
+plot(m5Tune)
+m5tree <- M5P(trainY ~ ., data = trainX,  control = Weka_control(M = 10))
+```
+Note: Compute confidence interval of prediction
+predict(model, new = testX, inteval= "prediction")
+predict(model, new = testX, inteval= "confidence")
+build neuron network with 5 hidden unit
+RMSE = 5.433054
+```{r}
+set.seed(215)
+nnetAvg <- avNNet(trainX, trainY,  size = 5,  decay = 0.01,  repeats = 5,
+        linout = TRUE, trace = FALSE,  maxit = 500,   allowParallel= TRUE)
+predNN <- predict(nnetAvg, testX)
+RMSE(predNN,observed)
+result <- cbind(observed,predNN)
+NN_residual <- predNN - observed
+```
+ Built Principle Componenet Regression model
+ RMSE=  8.966136
+```{r,echo=FALSE}
+set.seed(215)
+runPCR <- train(x = trainX, y = trainY, method = "pcr", trControl = ctrl,tuneLenght=25)
+predPCR <- predict(runPCR, newdata = testX)
+
+RMSE(predPCR,observed)
+
+result <- cbind(result,predPCR)
+pcr_residual = predPCR - observed
+
+rm(predPCR)
+```
+ Generate Partial Least Square (PLS) model
+ RMSE = 7.836922
+
+```{r,echo=FALSE}
+set.seed(215)
+runPLS <- train(x = trainX, y = trainY, method = "pls", preProcess=c("center","scale"),trControl = ctrl,tuneLenght=25)
+predPLS <- predict(runPLS, newdata = testX)
+
+RMSE(predPLS,observed)
+result <- cbind(result,predPLS)
+
+
+PLS_residual <- predPLS - observed
+residuals <- cbind(pcr_residual,PLS_residual)
+rm(predPLS)
+rm(pcr_residual)
+rm(PLS_residual)
+
+```
+ Generate Elastic Net model
+ RMSE  =  8.349887
+
+```{r, echo=FALSE}
+set.seed(215)  
+library(elasticnet)
+enetGrid <- expand.grid(lambda = c(0, .001, .01, .1, 1), fraction = seq(.05, 1, length = 20))
+runENet <-  train(x = trainX, y = trainY, method = "enet", preProcess=c("center","scale"),trControl = ctrl,
+                  tuneGrid=enetGrid) 
+enetModel <- enet(x = as.matrix(trainX), y = trainY, lambda = 0, normalize = TRUE)
+predEnet <- predict(enetModel, newx = as.matrix(testX), s = .1, mode = "fraction",    type = "fit")
+
+RMSE(predEnet$fit,observed)
+Elastic <- predEnet$fit
+
+result <- cbind(result,Elastic)
+
+Elastic_residual <- predEnet$fit - observed
+residuals <- cbind(residuals,Elastic_residual)
+rm(Elastic_residual)
+
+rm(predEnet)  
+rm(Elastic)
+```
+ generate RidgeRegression
+ RMSE = 7.636064
+
+```{r, echo=FALSE}
+set.seed(215)
+ridgeGrid <- data.frame(.lambda = seq( .1,4, length = 20))
+ridgeRegFit <- train(trainX,trainY, method ="ridge",tuneGrid = ridgeGrid, trControl=ctrl, preProc=c("center","scale"))
+ridgeRegFit
+
+ridgeModel <- enet(x = as.matrix(trainX), y = trainY,lambda=0.1)
+ridgePred <- predict(ridgeModel,newx=as.matrix(testX),s=1,mode="fraction",type="fit")
+
+
+RMSE(ridgePred$fit,observed)
+predRidge <- ridgePred$fit 
+result <- cbind(result,predRidge)
+
+ridge_residual <- predRidge - observed
+residuals <- cbind(residuals,ridge_residual)
+rm(ridge_residual)
+
+
+rm(predRidge)
+rm(ridgePred)  
+
+```
+ generate LARS model
+ RMSE=   7.27588
+  
+ eg: lassoFit <- lars(as.matrix(trainX),trainY,type=c("lasso"))
+ lassoPred <- predict.lars(lassoFit,newx=as.matrix(testX),type="fit")
+
+ RMSE(lassoPred$fit,observed)
+ predLasso <- lassoPred$fit 
+  
+```{r, echo=FALSE}
+set.seed(215)
+library(lars)
+# compute MSEs for a range of coefficient penalties as a fraction of 
+# final L1 norm on the interval [0,1] using cross validation
+cv.res <- cv.lars(as.matrix(trainX),trainY,type="lasso",mode="fraction",plot=FALSE)
+# Choose optimal value one standarf deviation away from minimum MSE
+opt.frac <- min(cv.res$cv) + sd(cv.res$cv)
+opt.frac <-cv.res$index[which(cv.res$cv < opt.frac)[1]]
+# Compute LARS fit
+lars.fit <- lars(as.matrix(trainX),trainY,type=c("lasso"))
+larsPred <- predict.lars(lars.fit,newx=as.matrix(testX),type="fit")
+# get last model fit
+last.fit <- dim(larsPred[4]$fit)[2]
+
+predLars <- larsPred[4]$fit[,last.fit]
+
+RMSE(predLars,observed)
+
+result <- cbind(result,predLars)
+
+lars_residual <- predLars - observed
+residuals <- cbind(residuals, lars_residual)
+rm(lars_residual)
+
+
+rm(predLars)
+rm(larsPred)  
+
+```
+ generate Support Vector Regression (SVR) model
+ RMSE=   6.27439
+  
+```{r, echo=FALSE}
+set.seed(215)  
+library(kernlab)
+svmRModel <- train(x = trainX,trainY,method = "svmRadial",preProc = c("center", "scale"), tuneLength = 10,trControl = trainControl(method = "cv")) 
+#Tuning parameter 'sigma' was held constant at a value of 0.0108882
+#RMSE was used to select the optimal model using  the smallest value.
+#The final values used for the model were sigma = 0.0108882 and C = 16.
+svmRModel$finalModel
+#SV type: eps-svr  (regression) 
+#parameter : epsilon = 0.1  cost C = 8
+#svmFit <- ksvm(x = trainX, y = trainY,kernel ="rbfdot", kpar = "automatic",C = 8, epsilon = 0.1)
+
+
+predSVMR <- predict(svmRModel, newdata = testX)
+RMSE(predSVMR,observed)  # 1807.155 after Box Cox, RMSE : 1.393408 
+result <- cbind(result,predSVMR)
+SVMR_residual <- predSVMR - observed
+residuals <- cbind(residuals, SVMR_residual)
+
+rm(SVMR_residual)
+rm(predSVMR)
+
+```
+ Generate MARS
+ RMSE =  4.728942
+
+```{r, echo= FALSE}
+set.seed(215)
+marsGrid <- expand.grid(.degree = 1:2, .nprune = 2:38)
+marsTuned <- train(trainX, trainY, method = "earth",tuneGrid = marsGrid,trControl = trainControl(method = "cv"))
+predMars <- predict(marsTuned,testX)
+RMSE(predMars,observed)
+result <- cbind(result,predMars)
+mars_residual <- predMars - observed
+residuals <- cbind(residuals, mars_residual)
+
+rm(mars_residual)
+rm(predMars) 
+
+```
+ generate KNN regression
+ RMSE =  8.999985
+  
+```{r , echo = FALSE}
+set.seed(215)
+knnTuned <- train(trainX, trainY,method = "knn",preProc = c("center", "scale"),
+                  tuneGrid = data.frame(.k = 1:20),trControl = trainControl(method = "cv"))
+predKNN <- predict(knnTuned,testX)
+RMSE(predKNN, observed)
+result <- cbind(result,predKNN)
+
+KNNR_residual <- predKNN - observed
+residuals <- cbind(residuals, KNNR_residual)
+
+rm(KNNR_residual)
+rm(predKNN)
+# alternatively, postResample(pred = knnPred, obs = testY)
+write.table(result,file="preditedSAR.csv",sep=",",row.names=FALSE,col.names=TRUE)    
+write.table(residuals,file="residuals_Compare.csv",sep=",",row.names=FALSE,col.names=TRUE)    
+
+```
+  plot residual histogram of regression models
+
+```{r, echo=FALSE}
+ df <- read.csv("residuals_compare.csv")
+ dat <- melt(df)
+ pdf("residualHistogram.pdf", width=6, height=5)
+ p1 <- ggplot(dat,aes(x=value)) + geom_histogram(data=subset(dat,variable == 'pcr_residual'),fill = "black", alpha = 0.2,binwidth=10) + ggtitle("PCR residuals")
+
+ p2 <- ggplot(dat,aes(x=value)) + geom_histogram(data=subset(dat,variable == 'PLS_residual'),fill = "black", alpha = 0.2,binwidth=10) + ggtitle("PLS residuals") + scale_x_continuous(breaks=c(-20,-10,10,20))
+
+ p3 <- ggplot(dat,aes(x=value)) + geom_histogram(data=subset(dat,variable == 'Elastic_residual'),fill = "black", alpha = 0.2,binwidth=10) +ggtitle("Elastic Net residuals") + scale_x_continuous(breaks=c(-20,-10,10,20))
+
+ p4 <- ggplot(dat,aes(x=value)) + geom_histogram(data=subset(dat,variable == 'ridge_residual'),fill = "black", alpha = 0.2,binwidth=10) + ggtitle("ridge residuals") + scale_x_continuous(breaks=c(-20,-10,10,20))
+
+ p5 <- ggplot(dat,aes(x=value)) + geom_histogram(data=subset(dat,variable == 'lars_residual'),fill = "black", alpha = 0.2,binwidth=10) +ggtitle("Lars residuals") + scale_x_continuous(breaks=c(-20,-10,10,20))
+
+ p6 <- ggplot(dat,aes(x=value)) + geom_histogram(data=subset(dat,variable == 'SVMR_residual'),fill = "black", alpha = 0.2,binwidth=10) +ggtitle("SVR residuals") + scale_x_continuous(breaks=c(-20,-10,10,20))
+
+
+p7 <- ggplot(dat,aes(x=value)) + geom_histogram(data=subset(dat,variable == 'mars_residual'),fill = "black", alpha = 0.2,binwidth=10) +ggtitle("mars residuals") + scale_x_continuous(breaks=c(-20,-10,10,20))
+
+p8 <- ggplot(dat,aes(x=value)) + geom_histogram(data=subset(dat,variable == 'KNNR_residual'),fill = "black", alpha = 0.2,binwidth=10) + ggtitle("KNN residuals") + scale_x_continuous(breaks=c(-20,-10,10,20))
+
+p<- grid.arrange(p1,p2, p3, p4,p5,p6,p7,p8, nrow=2)
+print(p)
+ 
+dev.off()
+```
+ compute 95% confidence interval (CI)
+```{r, echo=FALSE}
+ # PCR : 2.5% = -5.735264 ; 97.5% =  9.441427 
+ quantile(df$pcr_residual,.025) 
+ quantile(df$pcr_residual,.975)
+ 
+ # PLS:  2.5% = -10.52431;  97.5% = 5.875617 
+ quantile(df$PLS_residual,.025) 
+ quantile(df$PLS_residual,.975)
+ 
+ # Elastic: 2.5% = -7.38707  ; 97.5% = 5.639585 
+ quantile(df$Elastic_residual,.025) 
+ quantile(df$Elastic_residual,.975)
+
+ # Ridge: 2.5% = -10.46934  ; 97.5% = 5.877543 
+ quantile(df$ridge_residual,.025) 
+ quantile(df$ridge_residual,.975)
+
+ # LARS: 2.5% = -5.214255 ; 97.5% = 5.171606  
+ quantile(df$lars_residual,.025) 
+ quantile(df$lars_residual,.975)
+
+ # SVMR_residual : 2.5% = -4.025373 ; 97.5% = 3.676516 ; 
+ quantile(df$SVMR_residual,.025) 
+ quantile(df$SVMR_residual,.975)
+
+ # mars : 2.5% = -1.281899 ; 97.5%  = 1.152502 
+ quantile(df$mars_residual,.025) 
+ quantile(df$mars_residual,.975)
+
+ # KNNR: 2.5% = -6.479854 ; 97.5% = 9.357834 
+ quantile(df$KNNR_residual,.025) 
+ quantile(df$KNNR_residual,.975)
+```
+ compute MAD : Median absolute deviation
+```{r, echo= FALSE}
+ # MAD_PCR = 1.552573
+  mad_pcr = mad(df$pcr_residual,center=median(df$pcr_residual))
+ 
+ # MAD_PLS = 2.425057
+  mad_pls = mad(df$PLS_residual,center=median(df$PLS_residual))
+ 
+ # MAD_Elastic = 2.608583
+  mad_enet = mad(df$Elastic_residual,center=median(df$Elastic_residual))
+
+ # MAD_Ridge = 2.185359
+ mad_ridge = mad(df$ridge_residual,center=median(df$ridge_residual))
+ 
+ # MAD_Lars = 1.949095
+ mad_lars = mad(df$lars_residual,center=median(df$lars_residual))
+
+ # MAD_SVR = 1.376014
+ mad_svr = mad(df$SVMR_residual,center=median(df$SVMR_residual))
+
+ # MAD_MARS =  0.3343891
+  mad_mars  = mad(df$mars_residual,center=median(df$mars_residual))
+
+ # MAD_KNN = 1.489425
+  mad_knn = mad(df$KNNR_residual,center=median(df$KNNR_residual))
+ 
+```
+ compute Mean Absolute Error
+```{r,echo=FALSE}
+ # MAE_PCR =  2.807746
+  mae_pcr = mean(abs(df$pcr_residual))
+ 
+ # MAE_PLS = 2.379797
+  mae_pls = mean(abs(df$PLS_residual))
+ 
+ # MAE_Elastic = 2.098058
+  mae_enet = mean(abs(df$Elastic_residual))
+
+ # MAE_Ridge = 2.229552
+ mae_ridge = mean(abs(df$ridge_residual))
+ 
+ # MAE_Lars = 1.816003
+ mae_lars = mean(abs(df$lars_residual))
+
+ # MAE_SVR = 1.265414
+ mae_svr = mean(abs(df$SVMR_residual))
+
+ # MAE_MARS = 0.4152009
+  mae_mars  = mean(abs(df$mars_residual))
+
+ # MAE_KNN = 2.563048
+  mae_knn = mean(abs(df$KNNR_residual))
+
+```
+Compute spearman ranking
+
+PredPCR =  0.5416336
+PredPLS =  0.516655
+predElastic = 0.5853912
+predRidge = 0.5537625
+predSVMR = 0.7229657
+predMars = 0.834728
+predKNN =  0.3462306
+```{r}
+df <- read.csv("predictedSAR.csv")
+with(df,cor(observed,predPCR,method="spearman"))
+with(df,cor(observed,predPLS,method="spearman"))
+with(df,cor(observed,Elastic,method="spearman"))
+     
+with(df,cor(observed,predRidge,method="spearman"))
+with(df,cor(observed,predSVMR,method="spearman"))
+
+with(df,cor(observed,predMars,method="spearman"))
+with(df,cor(observed,predKNN,method="spearman"))

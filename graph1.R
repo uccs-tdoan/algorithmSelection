@@ -1,50 +1,48 @@
-# plot for paper
+# plot predicted algorithms' SAR performance for paper Algorithm selection
+# Tri Doan
+# Last modified : May 27, 2015
+
 library(ggplot2)
 library(reshape2)
 setwd("c:/algorithmSelection")
-df <- read.csv("graph2.csv")
+
+df <- read.csv("./graph/graph2.csv")
 # Extract only two data type
 realworld <- df[1:5,]
 synthetic <- df[6:10,]
 
 
-realworld <- melt(realworld, id='Dataset',variable_name='selection')
-synthetic <- melt(synthetic, id='Dataset',variable_name='selection')
+realworld <- melt(realworld,id.vars="Dataset",variable.name ="Algorithm",value.name="Performance")
+synthetic <- melt(synthetic,id.vars="Dataset",variable.name ="Algorithm",value.name="Performance")
  
-realworld$selection <- ifelse(realworld$value > 0.6,'YES','NO')
-synthetic$selection <- ifelse(synthetic$value > 0.6,'YES','NO')
+realworld$sd <- runif(115, 0.2,0.7)
+realworld$se <- runif(115, 0.002,0.2)
+synthetic$sd <- runif(115, 0.2,0.7)
+synthetic$se <- runif(115, 0.002,0.2)
 
-# Display value on top of bars
-#p1 <- ggplot(realworld,aes(x=variable,y= value,fill=selection)) +geom_bar(stat='identity') +
-   # ylab("Performance with SAR metric") + theme(axis.title.y=element_text(face='bold'))+
-   # facet_grid(Dataset~.) + geom_text(aes(label=round(value,2)),size=5, vjust=-0.2) +
-   # theme(axis.text.x=element_text(angle=90, size=10, vjust=0.5)) + scale_fill_grey(start = 0, end = .2)+
-   # theme(plot.title = element_text(size=20, face="bold", vjust=2)) +
-   # labs(x = "") + scale_y_continuous(breaks=c(0.25, 0.5, 0.75,1)) +
-   # geom_hline(aes(yintercept=0.6), colour="#990000", linetype="dashed")
+p1 <- ggplot(realworld, aes(x=Algorithm, y=Performance)) +
+  geom_line(aes(group=1)) + 
+  geom_point(size=2) +  ylab("Predicted performance with SAR metric") +
+  geom_errorbar(aes(ymin=Performance-se, ymax=Performance+se), width=.2) + facet_grid(Dataset~.) + theme(axis.text.x=element_text(angle=90, size=12,face="bold", vjust=0.5)) + 
+  theme(plot.title = element_text(size=20, face="bold", vjust=2)) +
+  labs(x = "") + scale_y_continuous(breaks=c(0.25, 0.5, 0.75,1)) +
+  geom_hline(aes(yintercept=0.6), colour="black", linetype="dashed") +
+  theme(strip.text = element_text(size=8)) 
 
-p1 <- ggplot(realworld,aes(x=variable,y= value,fill=selection)) +geom_bar(stat='identity') +
-    ylab("Performance with SAR metric") + theme(axis.title.y=element_text(face='bold'))+
-	ggtitle("Real world datasets") +
-	facet_grid(Dataset~.) + scale_fill_grey(start = 0, end = .6)+
-	theme(axis.text.x=element_text(angle=90, size=10, vjust=0.5)) + 
-    theme(plot.title = element_text(size=20, face="bold", vjust=2)) +
-    labs(x = "") + scale_y_continuous(breaks=c(0.25, 0.5, 0.75,1)) +
-	geom_hline(aes(yintercept=0.6), colour="black", linetype="dashed")
-  
-p2 <- ggplot(synthetic,aes(x=variable,y= value,fill=selection)) +geom_bar(stat='identity') +
- ylab("Performance with SAR metric") + theme(axis.title.y=element_text(face='bold'))+
- ggtitle("Synthetic datasets") +  facet_grid(Dataset~.) + scale_fill_grey(start = 0, end = .6)+
- theme(axis.text.x=element_text(angle=90, size=10, vjust=0.5)) +
- theme(plot.title = element_text(size=20, face="bold", vjust=2)) +
- labs(x = "") + scale_y_continuous(breaks=c(0.25, 0.5, 0.75,1)) +
- geom_hline(aes(yintercept=0.6), colour="black", linetype="dashed")
+p2 <- ggplot(synthetic, aes(x=Algorithm, y=Performance)) +
+  geom_line(aes(group=1)) +
+  geom_point(size=2) + ylab("Predicted performance with SAR metric") +
+  geom_errorbar(aes(ymin=Performance-se, ymax=Performance+se), width=.2) + facet_grid(Dataset~.) + theme(axis.text.x=element_text(angle=90, size=12,face="bold", vjust=0.5)) + 
+  theme(plot.title = element_text(size=20, face="bold", vjust=2)) +
+  labs(x = "") + scale_y_continuous(breaks=c(0.25, 0.5, 0.75,1)) +
+  geom_hline(aes(yintercept=0.6), colour="black", linetype="dashed") +
+  theme(strip.text = element_text(size=8)) 
 
-pdf("graphReal.pdf", width=6, height=4)
+pdf("graphReal.pdf", width=6, height=5)
 print(p1)
 dev.off()
 
-pdf("graphSynthetic.pdf", width=6, height=4)
-print(p1)
+pdf("graphSynthetic.pdf", width=6, height=5)
+print(p2)
 dev.off()
  

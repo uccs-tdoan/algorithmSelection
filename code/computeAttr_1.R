@@ -10,6 +10,8 @@ library("psych",lib="c:/r")
 normalized <- function (m) {if (m !=0) m/sqrt(sum(m*m)) else 0}
 
 # get file names
+files <- list.files(getwd())
+n <- length(files)
 
 
 # createMeta function

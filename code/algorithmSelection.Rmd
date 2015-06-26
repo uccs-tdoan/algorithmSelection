@@ -13,8 +13,8 @@ library(e1071)
 library(ggplot2)
 library(MASS)
 
-setwd("C:/algoSelecMeta/finalData")
-
+#setwd("C:/algoSelecMeta/finalData")
+setwd("C:/algorithmSelection/code")
 ```
 
 Since dataset contains all features that might be not all useful. We eliminate first 6 attributes as well as 25th feature (Dataset feature).
@@ -22,9 +22,9 @@ Since dataset contains all features that might be not all useful. We eliminate f
 
 
 ```{r, echo=FALSE}
-df <- read.csv("AlgoData.csv")
+df <- read.csv("../data/Alldata.csv")
 
-df <- df[-c(1:6,25)]
+df <- df[-c(1:7,10,12:14)]
 ```
 Next, we convert category feature (algorithm attribute) into binary feature.
 ```{r}
@@ -34,8 +34,8 @@ df <- as.data.frame(df)
 
 write.table(df,file="Train.csv",sep=",",row.names=FALSE,col.names=TRUE)    
 ```
- In this code section, we plot density by algorithm of TrainPCAplot.csv which
-indicates skewly data for most attributes
+ We can use Trains.csv or continue for remaining code
+ 
 ```{r, echo=FALSE}
  set.seed(215)
  TrainRow <- createDataPartition(df[, ncol(df)], p = 0.7, list= FALSE)
@@ -47,10 +47,75 @@ indicates skewly data for most attributes
  trainY<-df[TrainRow,ncol(df)]
  testX <- df[-TrainRow, 1:ncol(df)-1]
  observed <- df[-TrainRow,ncol(df)]
-```
-Model Tree (M5P in weka)
 
-We tune M5P
+
+```
+We use different regression techniques such as
+Non-linear regression with decision Tree includes 
+1. Classification and Regression Trees
+2. Conditional Decision Trees
+3. Model Trees
+4. Rule System
+5. Bagging CART
+6. Random Forest
+7. Gradient Boosted Machine
+8. Cubist
+
+Other non-linear regression includes
+1. Neuron Network
+2. Principle Components Regression
+3. generate Support Vector Regression (SVR)
+4. generate KNN regression
+5. Partial Least Square (PLS)
+6. Generate Elastic Net model
+7. generate Ridge Regression
+8. generate LARS model
+9. Generate Multivariate Adaptive Regression Splines  (MARS)
+
+loading libraries
+```{R }
+library(rpart)
+library(party)
+library(RWeka)
+library(ipred)
+library(randomForest)
+library(gbm)
+library(Cubist)
+
+```
+1. Classification and Regression Trees
+  rmse = 0.9290579
+  
+```{r}
+fit <- rpart(SAR~., data=trainData, control=rpart.control(minsplit=5))
+# summarize the fit
+summary(fit)
+# make predictions
+predCART <- predict(fit, testX)
+# summarize accuracy
+rmse <- mean((observed - predCART)^2)
+result <- cbind(observed,predCART)
+CART_residual <- predCART - observed
+
+```
+ 2. Conditional Decision Trees
+ RMSE = 0.9165631
+```{r}
+# fit model
+fit <- ctree(SAR~., data=trainData, controls=ctree_control(minsplit=2,minbucket=2,testtype="Univariate"))
+# summarize the fit
+summary(fit)
+# make predictions
+predCTree <- predict(fit, testX)
+# summarize accuracy
+rmse <- mean((observed - predCTree)^2)
+result <- cbind(result,predCTree)
+CTree_residual <- predCTree - observed
+
+```
+3. Model Tree (M5P in weka)
+
+We tune M5P and using MP5 tree to calculate
 ```{r}
  m5Tune <- train(trainX, trainY, 
                  method = "M5", 
@@ -59,12 +124,107 @@ We tune M5P
 
 plot(m5Tune)
 m5tree <- M5P(trainY ~ ., data = trainX,  control = Weka_control(M = 10))
+
+# Alternative, directly us  RWeka package
+# RMSE = 0.9308284
+
+fit <- M5P(SAR~., data=trainData)
+# summarize the fit
+summary(fit)
+# make predictions
+predM5P <- predict(fit, testX)
+# summarize accuracy
+rmse <- mean((observed - predM5P)^2)
+result <- cbind(result,predM5P)
+M5P_residual <- predM5P - observed
+
 ```
+4. Rule System
+RMSE= 0.9165631
+
+```{r}
+
+# fit model
+fit <- M5Rules(SAR~., data= trainX)
+# summarize the fit
+summary(fit)
+# make predictions
+predRule <- predict(fit, testX)
+# summarize accuracy
+rmse <- mean(( observed - predRule)^2)
+result <- cbind(result,predRule)
+Rule_residual <- predRule - observed
+```
+5. Bagging CART
+   RMSE = 0.9251395
+  
+```{r}  
+
+# fit model
+fit <- bagging(SAR~., data= trainData, control=rpart.control(minsplit=5))
+# summarize the fit
+summary(fit)
+# make predictions
+predBagCART <- predict(fit, testX)
+# summarize accuracy
+rmse <- mean(( observed- predBagCART)^2)
+result <- cbind(result,predBagCART)
+BagCart_residual <- predBagCART - observed
+
+```
+6. Random Forest
+   RMSE = 0.9215616
+
+```{r}
+# fit model
+fit <- randomForest(SAR~., data=trainData)
+# summarize the fit
+summary(fit)
+# make predictions
+predictions <- predict(fit, testX)
+# summarize accuracy
+rmse <- mean((observed - predictions)^2)
+
+```
+7. Gradient Boosted Machine
+   RMSE =
+   
+```{r}   
+# fit model
+fit <- gbm(SAR~., data=trainData, distribution="gaussian")
+# summarize the fit
+summary(fit)
+# make predictions
+predGBoost <- predict(fit,testX )
+# summarize accuracy
+rmse <- mean(( observed - predGBoost)^2)
+result <- cbind(result, predGBoost)
+GBoost_residual <- predGBoost - observed
+```
+8. Cubist
+ RMSE = 0.902461
+
+```{r}
+# fit model
+fit <- cubist(trainX, trainY)
+# summarize the fit
+summary(fit)
+# make predictions
+predCubist <- predict(fit, testX)
+# summarize accuracy
+rmse <- mean((observed - predCubist)^2)
+
+```
+
+Non-linear regression 
+1. Neuron Network 
+
 Note: Compute confidence interval of prediction
 predict(model, new = testX, inteval= "prediction")
 predict(model, new = testX, inteval= "confidence")
 build neuron network with 5 hidden unit
-RMSE = 5.433054
+RMSE = 5.433054   0.9699801
+
 ```{r}
 set.seed(215)
 nnetAvg <- avNNet(trainX, trainY,  size = 5,  decay = 0.01,  repeats = 5,
@@ -74,8 +234,9 @@ RMSE(predNN,observed)
 result <- cbind(observed,predNN)
 NN_residual <- predNN - observed
 ```
- Built Principle Componenet Regression model
- RMSE=  8.966136
+2.  Built Principle Components Regression model
+ RMSE=  0.9713516
+ 
 ```{r,echo=FALSE}
 set.seed(215)
 runPCR <- train(x = trainX, y = trainY, method = "pcr", trControl = ctrl,tuneLenght=25)
@@ -87,9 +248,54 @@ result <- cbind(result,predPCR)
 pcr_residual = predPCR - observed
 
 rm(predPCR)
+
 ```
- Generate Partial Least Square (PLS) model
- RMSE = 7.836922
+3. generate Support Vector Regression (SVR) model
+  RMSE=   0.9640276
+  
+```{r, echo=FALSE}
+set.seed(215)  
+library(kernlab)
+svmRModel <- train(x = trainX,trainY,method = "svmRadial",preProc = c("center", "scale"), tuneLength = 10,trControl = trainControl(method = "cv")) 
+#Tuning parameter 'sigma' was held constant at a value of 0.0108882
+#RMSE was used to select the optimal model using  the smallest value.
+#The final values used for the model were sigma = 0.0108882 and C = 16.
+svmRModel$finalModel
+#SV type: eps-svr  (regression) 
+#parameter : epsilon = 0.1  cost C = 8
+#svmFit <- ksvm(x = trainX, y = trainY,kernel ="rbfdot", kpar = "automatic",C = 8, epsilon = 0.1)
+
+
+predSVMR <- predict(svmRModel, newdata = testX)
+RMSE(predSVMR,observed)  # 1807.155 after Box Cox, RMSE : 1.393408 
+result <- cbind(result,predSVMR)
+SVMR_residual <- predSVMR - observed
+residuals <- cbind(residuals, SVMR_residual)
+
+rm(SVMR_residual)
+rm(predSVMR)
+
+```
+4.  generate KNN regression
+ RMSE = 0.9691691
+  
+```{r , echo = FALSE}
+set.seed(215)
+knnTuned <- train(trainX, trainY,method = "knn",preProc = c("center", "scale"),
+                  tuneGrid = data.frame(.k = 1:20),trControl = trainControl(method = "cv"))
+predKNN <- predict(knnTuned,testX)
+RMSE(predKNN, observed)
+result <- cbind(result,predKNN)
+
+KNNR_residual <- predKNN - observed
+residuals <- cbind(residuals, KNNR_residual)
+
+rm(KNNR_residual)
+rm(predKNN)
+
+```
+5. Generate Partial Least Square (PLS) model
+ RMSE = 0.9669828
 
 ```{r,echo=FALSE}
 set.seed(215)
@@ -103,12 +309,12 @@ result <- cbind(result,predPLS)
 PLS_residual <- predPLS - observed
 residuals <- cbind(pcr_residual,PLS_residual)
 rm(predPLS)
-rm(pcr_residual)
+#rm(pcr_residual)
 rm(PLS_residual)
 
 ```
- Generate Elastic Net model
- RMSE  =  8.349887
+6. Generate Elastic Net model
+ RMSE  =  0.9668436    
 
 ```{r, echo=FALSE}
 set.seed(215)  
@@ -131,8 +337,8 @@ rm(Elastic_residual)
 rm(predEnet)  
 rm(Elastic)
 ```
- generate RidgeRegression
- RMSE = 7.636064
+ 7. generate Ridge Regression
+ RMSE = 0.9669102
 
 ```{r, echo=FALSE}
 set.seed(215)
@@ -157,8 +363,8 @@ rm(predRidge)
 rm(ridgePred)  
 
 ```
- generate LARS model
- RMSE=   7.27588
+ 8. generate LARS model
+ RMSE=   0.9668436
   
  eg: lassoFit <- lars(as.matrix(trainX),trainY,type=c("lasso"))
  lassoPred <- predict.lars(lassoFit,newx=as.matrix(testX),type="fit")
@@ -196,34 +402,8 @@ rm(predLars)
 rm(larsPred)  
 
 ```
- generate Support Vector Regression (SVR) model
- RMSE=   6.27439
-  
-```{r, echo=FALSE}
-set.seed(215)  
-library(kernlab)
-svmRModel <- train(x = trainX,trainY,method = "svmRadial",preProc = c("center", "scale"), tuneLength = 10,trControl = trainControl(method = "cv")) 
-#Tuning parameter 'sigma' was held constant at a value of 0.0108882
-#RMSE was used to select the optimal model using  the smallest value.
-#The final values used for the model were sigma = 0.0108882 and C = 16.
-svmRModel$finalModel
-#SV type: eps-svr  (regression) 
-#parameter : epsilon = 0.1  cost C = 8
-#svmFit <- ksvm(x = trainX, y = trainY,kernel ="rbfdot", kpar = "automatic",C = 8, epsilon = 0.1)
-
-
-predSVMR <- predict(svmRModel, newdata = testX)
-RMSE(predSVMR,observed)  # 1807.155 after Box Cox, RMSE : 1.393408 
-result <- cbind(result,predSVMR)
-SVMR_residual <- predSVMR - observed
-residuals <- cbind(residuals, SVMR_residual)
-
-rm(SVMR_residual)
-rm(predSVMR)
-
-```
- Generate MARS
- RMSE =  4.728942
+ 9. Generate MARS
+ RMSE =  0.9626668
 
 ```{r, echo= FALSE}
 set.seed(215)
@@ -238,23 +418,6 @@ residuals <- cbind(residuals, mars_residual)
 rm(mars_residual)
 rm(predMars) 
 
-```
- generate KNN regression
- RMSE =  8.999985
-  
-```{r , echo = FALSE}
-set.seed(215)
-knnTuned <- train(trainX, trainY,method = "knn",preProc = c("center", "scale"),
-                  tuneGrid = data.frame(.k = 1:20),trControl = trainControl(method = "cv"))
-predKNN <- predict(knnTuned,testX)
-RMSE(predKNN, observed)
-result <- cbind(result,predKNN)
-
-KNNR_residual <- predKNN - observed
-residuals <- cbind(residuals, KNNR_residual)
-
-rm(KNNR_residual)
-rm(predKNN)
 # alternatively, postResample(pred = knnPred, obs = testY)
 write.table(result,file="preditedSAR.csv",sep=",",row.names=FALSE,col.names=TRUE)    
 write.table(residuals,file="residuals_Compare.csv",sep=",",row.names=FALSE,col.names=TRUE)    
@@ -322,7 +485,7 @@ dev.off()
  quantile(df$KNNR_residual,.025) 
  quantile(df$KNNR_residual,.975)
 ```
- compute MAD : Median absolute deviation
+ compute MAD : Median absolute quitdeviation
 ```{r, echo= FALSE}
  # MAD_PCR = 1.552573
   mad_pcr = mad(df$pcr_residual,center=median(df$pcr_residual))

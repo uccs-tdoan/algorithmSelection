@@ -2,7 +2,7 @@
 title: "Regression Models"
 output: pdf_document
 author: Tri Doan
-Last update: June 25, 2015
+Date: March 3, 2015 Last update: June 25, 2015
 ---
 
 The following codes demonstrate algorithm selection  project.
@@ -12,8 +12,8 @@ library(caret)
 library(e1071)
 library(ggplot2)
 library(MASS)
+library(gbm)
 
-#setwd("C:/algoSelecMeta/finalData")
 setwd("C:/algorithmSelection/code")
 ```
 
@@ -85,6 +85,8 @@ library(Cubist)
 ```
 1. Classification and Regression Trees
   rmse = 0.9290579
+  Spearman's rank correlation rho = 0.7721002
+  S = 17408251, p-value < 2.2e-16
   
 ```{r}
 fit <- rpart(SAR~., data=trainData, control=rpart.control(minsplit=5))
@@ -97,9 +99,14 @@ rmse <- mean((observed - predCART)^2)
 result <- cbind(observed,predCART)
 CART_residual <- predCART - observed
 
+cor.test(observed,predCART, method="spearman")
 ```
  2. Conditional Decision Trees
  RMSE = 0.9165631
+ 
+ Spearman's rank correlation rho = 0.8856459 
+ S = 8735001, p-value < 2.2e-16
+ 
 ```{r}
 # fit model
 fit <- ctree(SAR~., data=trainData, controls=ctree_control(minsplit=2,minbucket=2,testtype="Univariate"))
@@ -111,6 +118,8 @@ predCTree <- predict(fit, testX)
 rmse <- mean((observed - predCTree)^2)
 result <- cbind(result,predCTree)
 CTree_residual <- predCTree - observed
+
+cor.test(observed,predCTree, method="spearman")
 
 ```
 3. Model Tree (M5P in weka)
@@ -126,7 +135,11 @@ plot(m5Tune)
 m5tree <- M5P(trainY ~ ., data = trainX,  control = Weka_control(M = 10))
 
 # Alternative, directly us  RWeka package
+# 
 # RMSE = 0.9308284
+# Spearman's rank correlation rho = 0.6438348 
+# S = 27205874, p-value < 2.2e-16
+
 
 fit <- M5P(SAR~., data=trainData)
 # summarize the fit
@@ -138,9 +151,14 @@ rmse <- mean((observed - predM5P)^2)
 result <- cbind(result,predM5P)
 M5P_residual <- predM5P - observed
 
+cor.test(observed,predM5P, method="spearman")
+
 ```
-4. Rule System
+4. Rule based System
 RMSE= 0.9165631
+
+Spearman's rank correlation rho = 0.6438348 
+S = 27205874, p-value < 2.2e-16
 
 ```{r}
 
@@ -154,9 +172,15 @@ predRule <- predict(fit, testX)
 rmse <- mean(( observed - predRule)^2)
 result <- cbind(result,predRule)
 Rule_residual <- predRule - observed
+
+cor.test(observed, predRule, method="spearman")
 ```
 5. Bagging CART
    RMSE = 0.9251395
+   
+   Spearman's rank correlation rho = 0.8373852
+   
+   S = 12421416, p-value < 2.2e-16
   
 ```{r}  
 
@@ -171,9 +195,13 @@ rmse <- mean(( observed- predBagCART)^2)
 result <- cbind(result,predBagCART)
 BagCart_residual <- predBagCART - observed
 
+cor.test(observed,predBagCART,  method="spearman")
+
 ```
 6. Random Forest
    RMSE = 0.9215616
+   Spearman's rank correlation rho = 0.8976872 
+   S = 7815221, p-value < 2.2e-16
 
 ```{r}
 # fit model
@@ -181,13 +209,18 @@ fit <- randomForest(SAR~., data=trainData)
 # summarize the fit
 summary(fit)
 # make predictions
-predictions <- predict(fit, testX)
+predRF <- predict(fit, testX)
 # summarize accuracy
-rmse <- mean((observed - predictions)^2)
+rmse <- mean((observed - predRF)^2)
+
+cor.test(observed,predRF,  method="spearman")
 
 ```
-7. Gradient Boosted Machine
-   RMSE =
+7. Gradient Boosted Regression
+   RMSE = 0.9439175
+   
+   Spearman's rank correlation rho = 0.3470242 
+   S = 49877913, p-value < 2.2e-16
    
 ```{r}   
 # fit model
@@ -195,14 +228,20 @@ fit <- gbm(SAR~., data=trainData, distribution="gaussian")
 # summarize the fit
 summary(fit)
 # make predictions
-predGBoost <- predict(fit,testX )
+predGBoost <- predict(fit,df[-TrainRow, ],n.trees=5)
 # summarize accuracy
 rmse <- mean(( observed - predGBoost)^2)
 result <- cbind(result, predGBoost)
 GBoost_residual <- predGBoost - observed
+
+cor.test(observed, predGBoost, method="spearman")
+
 ```
 8. Cubist
  RMSE = 0.902461
+ Spearman's rank correlation rho = 0.8806595 
+ S = 9115892, p-value < 2.2e-16
+ 
 
 ```{r}
 # fit model
@@ -214,6 +253,9 @@ predCubist <- predict(fit, testX)
 # summarize accuracy
 rmse <- mean((observed - predCubist)^2)
 
+
+cor.test(observed, predCubist, method="spearman")
+
 ```
 
 Non-linear regression 
@@ -223,7 +265,10 @@ Note: Compute confidence interval of prediction
 predict(model, new = testX, inteval= "prediction")
 predict(model, new = testX, inteval= "confidence")
 build neuron network with 5 hidden unit
-RMSE = 5.433054   0.9699801
+RMSE =  0.9699801
+
+Spearman's rank correlation rho = 0.8103927
+S = 14483256, p-value < 2.2e-16
 
 ```{r}
 set.seed(215)
@@ -233,9 +278,14 @@ predNN <- predict(nnetAvg, testX)
 RMSE(predNN,observed)
 result <- cbind(observed,predNN)
 NN_residual <- predNN - observed
+
+cor.test(observed, predNN, method="spearman")
+rm(predNN)
 ```
-2.  Built Principle Components Regression model
+0.  Built Principle Components Regression model
  RMSE=  0.9713516
+ Spearman's rank correlation rho  = 0.09964621
+ S = 68774010, p-value = 0.005618
  
 ```{r,echo=FALSE}
 set.seed(215)
@@ -246,12 +296,15 @@ RMSE(predPCR,observed)
 
 result <- cbind(result,predPCR)
 pcr_residual = predPCR - observed
-
+cor.test(observed, predPCR, method="spearman")
 rm(predPCR)
 
+
 ```
-3. generate Support Vector Regression (SVR) model
+2. generate Support Vector Regression (SVR) model
   RMSE=   0.9640276
+  Spearman's rank correlation rho = 0.724632 
+  S = 21034137, p-value < 2.2e-16
   
 ```{r, echo=FALSE}
 set.seed(215)  
@@ -272,13 +325,18 @@ result <- cbind(result,predSVMR)
 SVMR_residual <- predSVMR - observed
 residuals <- cbind(residuals, SVMR_residual)
 
+
+cor.test(observed, predSVMR, method="spearman")
 rm(SVMR_residual)
 rm(predSVMR)
 
 ```
-4.  generate KNN regression
+3.  generate KNN regression
  RMSE = 0.9691691
-  
+ Spearman's rank correlation rho = 0.4849237 
+ 
+ S = 39344378, p-value < 2.2e-16
+ 
 ```{r , echo = FALSE}
 set.seed(215)
 knnTuned <- train(trainX, trainY,method = "knn",preProc = c("center", "scale"),
@@ -290,12 +348,16 @@ result <- cbind(result,predKNN)
 KNNR_residual <- predKNN - observed
 residuals <- cbind(residuals, KNNR_residual)
 
+
+cor.test(observed, predKNN, method="spearman")
 rm(KNNR_residual)
 rm(predKNN)
 
 ```
-5. Generate Partial Least Square (PLS) model
+4. Generate Partial Least Square (PLS) model
  RMSE = 0.9669828
+ Spearman's rank correlation rho = 0.5618751 
+ S = 33466406, p-value < 2.2e-16
 
 ```{r,echo=FALSE}
 set.seed(215)
@@ -304,42 +366,20 @@ predPLS <- predict(runPLS, newdata = testX)
 
 RMSE(predPLS,observed)
 result <- cbind(result,predPLS)
-
+cor.test(observed, predPLS, method="spearman")
 
 PLS_residual <- predPLS - observed
 residuals <- cbind(pcr_residual,PLS_residual)
 rm(predPLS)
-#rm(pcr_residual)
 rm(PLS_residual)
 
+
 ```
-6. Generate Elastic Net model
- RMSE  =  0.9668436    
-
-```{r, echo=FALSE}
-set.seed(215)  
-library(elasticnet)
-enetGrid <- expand.grid(lambda = c(0, .001, .01, .1, 1), fraction = seq(.05, 1, length = 20))
-runENet <-  train(x = trainX, y = trainY, method = "enet", preProcess=c("center","scale"),trControl = ctrl,
-                  tuneGrid=enetGrid) 
-enetModel <- enet(x = as.matrix(trainX), y = trainY, lambda = 0, normalize = TRUE)
-predEnet <- predict(enetModel, newx = as.matrix(testX), s = .1, mode = "fraction",    type = "fit")
-
-RMSE(predEnet$fit,observed)
-Elastic <- predEnet$fit
-
-result <- cbind(result,Elastic)
-
-Elastic_residual <- predEnet$fit - observed
-residuals <- cbind(residuals,Elastic_residual)
-rm(Elastic_residual)
-
-rm(predEnet)  
-rm(Elastic)
-```
- 7. generate Ridge Regression
+ 5. generate Ridge Regression
  RMSE = 0.9669102
-
+ Spearman's rank correlation = 0.5731067
+ S = 32608475, p-value < 2.2e-16
+ 
 ```{r, echo=FALSE}
 set.seed(215)
 ridgeGrid <- data.frame(.lambda = seq( .1,4, length = 20))
@@ -354,6 +394,8 @@ RMSE(ridgePred$fit,observed)
 predRidge <- ridgePred$fit 
 result <- cbind(result,predRidge)
 
+cor.test(observed, predRidge, method="spearman")
+
 ridge_residual <- predRidge - observed
 residuals <- cbind(residuals,ridge_residual)
 rm(ridge_residual)
@@ -363,9 +405,11 @@ rm(predRidge)
 rm(ridgePred)  
 
 ```
- 8. generate LARS model
+ 6. generate LARS model
  RMSE=   0.9668436
-  
+ Spearman's rank correlation = 0.5790173 
+ S = 32156992, p-value < 2.2e-16
+ 
  eg: lassoFit <- lars(as.matrix(trainX),trainY,type=c("lasso"))
  lassoPred <- predict.lars(lassoFit,newx=as.matrix(testX),type="fit")
 
@@ -391,6 +435,7 @@ predLars <- larsPred[4]$fit[,last.fit]
 
 RMSE(predLars,observed)
 
+cor.test(observed, predLars, method="spearman")
 result <- cbind(result,predLars)
 
 lars_residual <- predLars - observed
@@ -402,8 +447,38 @@ rm(predLars)
 rm(larsPred)  
 
 ```
+7. Generate Elastic Net model
+ RMSE  =  0.9668436    
+ Spearman's rank correlation = 0.5790173 
+ S = 32156992, p-value < 2.2e-16
+ 
+
+```{r, echo=FALSE}
+set.seed(215)  
+library(elasticnet)
+enetGrid <- expand.grid(lambda = c(0, .001, .01, .1, 1), fraction = seq(.05, 1, length = 20))
+runENet <-  train(x = trainX, y = trainY, method = "enet", preProcess=c("center","scale"),trControl = ctrl,
+                  tuneGrid=enetGrid) 
+enetModel <- enet(x = as.matrix(trainX), y = trainY, lambda = 0, normalize = TRUE)
+predEnet <- predict(enetModel, newx = as.matrix(testX), s = .1, mode = "fraction",    type = "fit")
+
+RMSE(predEnet$fit,observed)
+Elastic <- predEnet$fit
+
+result <- cbind(result,Elastic)
+
+Elastic_residual <- predEnet$fit - observed
+residuals <- cbind(residuals,Elastic_residual)
+rm(Elastic_residual)
+
+cor.test(observed, Elastic, method="spearman")
+rm(predEnet)  
+rm(Elastic)
+
  9. Generate MARS
  RMSE =  0.9626668
+ Spearman's rank correlation = 0.8385391
+ S = 12333280, p-value < 2.2e-16
 
 ```{r, echo= FALSE}
 set.seed(215)
@@ -412,6 +487,8 @@ marsTuned <- train(trainX, trainY, method = "earth",tuneGrid = marsGrid,trContro
 predMars <- predict(marsTuned,testX)
 RMSE(predMars,observed)
 result <- cbind(result,predMars)
+
+cor.test(observed, predMars, method="spearman")
 mars_residual <- predMars - observed
 residuals <- cbind(residuals, mars_residual)
 

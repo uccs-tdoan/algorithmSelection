@@ -474,8 +474,8 @@ rm(Elastic_residual)
 cor.test(observed, Elastic, method="spearman")
 rm(predEnet)  
 rm(Elastic)
-
- 9. Generate MARS
+```
+ 8. Generate MARS
  RMSE =  0.9626668
  Spearman's rank correlation = 0.8385391
  S = 12333280, p-value < 2.2e-16
